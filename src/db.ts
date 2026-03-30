@@ -4,7 +4,9 @@ import { parseSentence } from "./parsers/sentences.js";
 
 const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseKey =
-  process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY!;
+  process.env.SUPABASE_SERVICE_ROLE_KEY ??
+  process.env.SUPABASE_PUBLISHABLE_KEY ??
+  process.env.SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -324,7 +326,7 @@ export async function upsertStatistics(
   for (let i = 0; i < rows.length; i += 50) {
     const batch = rows.slice(i, i + 50);
 
-    const { data, error } = await from("clemency_statistic")
+    const { data, error } = await from("clemency_statistics")
       .upsert(batch, {
         onConflict: "presidential_term_id,fiscal_year",
         ignoreDuplicates: false,

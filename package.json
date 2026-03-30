@@ -14,7 +14,8 @@
     "scrape:stats": "tsx src/scrape-stats.ts",
     "test": "vitest run",
     "lint": "oxlint src/",
-    "format": "oxfmt"
+    "format": "oxfmt",
+    "gen:types": "supabase gen types typescript --local --schema pardonned > src/database.types.ts"
   },
   "keywords": [],
   "author": "",
