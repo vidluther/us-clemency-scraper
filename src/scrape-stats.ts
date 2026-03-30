@@ -1,15 +1,15 @@
 import "dotenv/config";
 import { fetchPageHtml, closeBrowser } from "./browser.js";
-import { getAllTerms, resolveTermSlug, upsertStatistics } from "./db.js";
+import { getAllTerms, resolveTermSlug, upsertStatistics, getTermId } from "./db.js";
 import { parseStatsPage } from "./parsers/stats.js";
 import type { ClemencyStatRow } from "./parsers/types.js";
 
 const STATS_URL = "https://www.justice.gov/pardon/clemency-statistics";
 
 async function main(): Promise<void> {
-  // Load all terms up front for slug resolution
+  // Load all presidential terms up front for slug resolution
   const allTerms = await getAllTerms();
-  console.log(`Loaded ${allTerms.length} terms from DB`);
+  console.log(`Loaded ${allTerms.length} presidential terms from DB`);
 
   console.log(`Fetching: ${STATS_URL}`);
 
@@ -18,14 +18,16 @@ async function main(): Promise<void> {
     const parsed = parseStatsPage(html);
 
     const admins = new Set(parsed.map((r) => r.base_slug)).size;
-    console.log(`Parsed ${parsed.length} rows across ${admins} administrations`);
+    console.log(
+      `Parsed ${parsed.length} rows across ${admins} administrations`,
+    );
 
     if (parsed.length === 0) {
       console.warn("No rows parsed — check the page structure.");
       return;
     }
 
-    // Resolve base_slug → specific term_slug
+    // Resolve base_slug → specific term_slug → term_id
     const rows: ClemencyStatRow[] = [];
     let skippedNoTerm = 0;
 
@@ -36,8 +38,9 @@ async function main(): Promise<void> {
           row.fiscal_year,
           allTerms,
         );
+        const presidential_term_id = await getTermId(term_slug);
         rows.push({
-          term_slug,
+          presidential_term_id,
           fiscal_year: row.fiscal_year,
           petitions_received: row.petitions_received,
           total_granted: row.total_granted,

@@ -30,10 +30,7 @@ export function detectFormat(html: string): PageFormat {
     return "table-five";
   }
 
-  if (
-    headers.some((h: string) => h === "NAME") &&
-    headers.length === 4
-  ) {
+  if (headers.some((h: string) => h === "NAME") && headers.length === 4) {
     return "table-four";
   }
 

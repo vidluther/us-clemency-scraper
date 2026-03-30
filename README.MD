@@ -9,3 +9,13 @@ https://www.justice.gov/pardon/clemency-recipients
 Some interesting statistics are also available here, and they are mirrored in our database.
 
 https://www.justice.gov/pardon/clemency-statistics
+
+## Local Setup
+
+
+```
+pnpm install
+supabase start
+pnpm scrape:all
+pnpm scrape:stats 
+```

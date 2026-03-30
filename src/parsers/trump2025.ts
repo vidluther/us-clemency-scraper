@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import type { ClemencyGrant } from "./types.js";
+import type { ParsedGrant } from "./types.js";
 
 /**
  * Format A — Trump 2025 combined page.
@@ -17,9 +17,9 @@ import type { ClemencyGrant } from "./types.js";
 export function parseTrump2025(
   html: string,
   sourceUrl: string,
-): ClemencyGrant[] {
+): ParsedGrant[] {
   const $ = cheerio.load(html);
-  const grants: ClemencyGrant[] = [];
+  const grants: ParsedGrant[] = [];
 
   const headings = $("h3");
 
@@ -83,15 +83,22 @@ export function parseTrump2025(
 }
 
 function parseDate(headingText: string): string | null {
-  const match = headingText.match(
-    /(\w+)\s+(\d{1,2}),\s+(\d{4})/,
-  );
+  const match = headingText.match(/(\w+)\s+(\d{1,2}),\s+(\d{4})/);
   if (!match) return null;
 
   const months: Record<string, string> = {
-    January: "01", February: "02", March: "03", April: "04",
-    May: "05", June: "06", July: "07", August: "08",
-    September: "09", October: "10", November: "11", December: "12",
+    January: "01",
+    February: "02",
+    March: "03",
+    April: "04",
+    May: "05",
+    June: "06",
+    July: "07",
+    August: "08",
+    September: "09",
+    October: "10",
+    November: "11",
+    December: "12",
   };
 
   const month = months[match[1]];

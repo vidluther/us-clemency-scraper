@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import type { ClemencyGrant } from "./types.js";
+import type { ParsedGrant } from "./types.js";
 
 /**
  * Format D — Obama and earlier (separate pardons/commutations pages).
@@ -24,9 +24,9 @@ export function parseKeyValue(
   html: string,
   clemencyType: "pardon" | "commutation",
   sourceUrl: string,
-): ClemencyGrant[] {
+): ParsedGrant[] {
   const $ = cheerio.load(html);
-  const grants: ClemencyGrant[] = [];
+  const grants: ParsedGrant[] = [];
 
   // Strategy: collect date headings and tables, then match them.
   // Some pages interleave headings and tables (1:1 mapping by position),
@@ -37,7 +37,6 @@ export function parseKeyValue(
     .toArray();
 
   const tables = $("table").toArray();
-
 
   if (dateHeadings.length > 0 && tables.length > 0) {
     // Use nextUntil to find tables between each heading and the next H2
@@ -64,7 +63,9 @@ export function parseKeyValue(
   }
 
   // Fallback: process all tables directly (handles single-table with in-line dates)
-  console.log(`    [key-value] Fallback: processing ${tables.length} tables with inline dates`);
+  console.log(
+    `    [key-value] Fallback: processing ${tables.length} tables with inline dates`,
+  );
   for (const table of tables) {
     const tableGrants = parseTable(
       $,
@@ -85,8 +86,8 @@ function parseTable(
   clemencyType: "pardon" | "commutation",
   sourceUrl: string,
   defaultDate: string | null,
-): ClemencyGrant[] {
-  const grants: ClemencyGrant[] = [];
+): ParsedGrant[] {
+  const grants: ParsedGrant[] = [];
   const rows = table.find("tr");
 
   let current: PersonRecord | null = null;
@@ -183,9 +184,7 @@ function parseTable(
         appendToField(current, lastField, value);
       }
     } else if (current) {
-      const normalizedLabel = label
-        .toLowerCase()
-        .replace(/[:\s]/g, "");
+      const normalizedLabel = label.toLowerCase().replace(/[:\s]/g, "");
 
       if (normalizedLabel === "offense" || normalizedLabel === "offenses") {
         current.offense = value;
@@ -241,23 +240,35 @@ function isNameValue(value: string): boolean {
   // Sentence-like continuations that start with lowercase or special chars
   if (/^[a-z(]/.test(value)) return false;
   // Values that look like sentences (contain common sentence keywords right at start)
-  if (/^(?:Life|Time served|No punishment)/i.test(value) && !value.includes(",")) {
+  if (
+    /^(?:Life|Time served|No punishment)/i.test(value) &&
+    !value.includes(",")
+  ) {
     // Could be a name like "Life" or a sentence — check for imprisonment keywords
-    if (/imprisonment|probation|supervised|confinement/i.test(value)) return false;
+    if (/imprisonment|probation|supervised|confinement/i.test(value))
+      return false;
   }
   return true;
 }
 
-function appendToField(person: PersonRecord, field: string, value: string): void {
+function appendToField(
+  person: PersonRecord,
+  field: string,
+  value: string,
+): void {
   switch (field) {
     case "offense":
       person.offense = person.offense ? `${person.offense}; ${value}` : value;
       break;
     case "sentence":
-      person.sentence = person.sentence ? `${person.sentence}; ${value}` : value;
+      person.sentence = person.sentence
+        ? `${person.sentence}; ${value}`
+        : value;
       break;
     case "district":
-      person.district = person.district ? `${person.district}; ${value}` : value;
+      person.district = person.district
+        ? `${person.district}; ${value}`
+        : value;
       break;
     case "terms":
       person.terms = person.terms ? `${person.terms}; ${value}` : value;
@@ -270,7 +281,7 @@ function buildGrant(
   clemencyType: "pardon" | "commutation",
   grantDate: string,
   sourceUrl: string,
-): ClemencyGrant {
+): ParsedGrant {
   let offense = person.offense || "";
   let district = person.district;
 
@@ -284,9 +295,7 @@ function buildGrant(
   // Append terms to sentence if present
   let sentence = person.sentence;
   if (person.terms) {
-    sentence = sentence
-      ? `${sentence} (Terms: ${person.terms})`
-      : person.terms;
+    sentence = sentence ? `${sentence} (Terms: ${person.terms})` : person.terms;
   }
 
   return {
@@ -332,9 +341,18 @@ function parseDate(text: string): string | null {
   if (!match) return null;
 
   const months: Record<string, string> = {
-    January: "01", February: "02", March: "03", April: "04",
-    May: "05", June: "06", July: "07", August: "08",
-    September: "09", October: "10", November: "11", December: "12",
+    January: "01",
+    February: "02",
+    March: "03",
+    April: "04",
+    May: "05",
+    June: "06",
+    July: "07",
+    August: "08",
+    September: "09",
+    October: "10",
+    November: "11",
+    December: "12",
   };
 
   const month = months[match[1]];

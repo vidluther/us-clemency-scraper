@@ -83,24 +83,28 @@ npx tsc --noEmit             # Type check without emitting
 ### Naming Conventions
 
 - **Variables and functions:** `snake_case`
+
   ```typescript
   const grant_date = "2025-01-21";
   function parseDate(text: string) { ... }
   ```
 
 - **Constants:** `SCREAMING_SNAKE_CASE`
+
   ```typescript
   const SCHEMA = "pardonned";
   const PRESIDENT_SOURCES: PresidentSource[] = [ ... ];
   ```
 
 - **Type/Interface names:** `PascalCase`
+
   ```typescript
   interface ClemencyGrant { ... }
   type PageFormat = "trump2025" | "table-five" | "table-four" | "key-value";
   ```
 
 - **Interface fields:** `snake_case` (to match database columns)
+
   ```typescript
   interface ClemencyGrant {
     recipient_name: string;
@@ -119,6 +123,7 @@ npx tsc --noEmit             # Type check without emitting
 
 - Use `async/await` for asynchronous operations. Never use `.then()` chains.
 - Use arrow functions for callbacks:
+
   ```typescript
   rows.each((_i, row) => { ... });
   headings.filter((_i, h) => parseDate($(h).text()) !== null);
@@ -140,11 +145,13 @@ npx tsc --noEmit             # Type check without emitting
 ### Error Handling
 
 - Use `throw new Error()` with descriptive messages:
+
   ```typescript
   throw new Error(`Term not found for slug "${slug}": ${error?.message}`);
   ```
 
 - Use `try/finally` for cleanup operations:
+
   ```typescript
   try {
     await page.goto(url, { waitUntil: "domcontentloaded" });
@@ -186,6 +193,7 @@ npx tsc --noEmit             # Type check without emitting
 ## External APIs
 
 This scraper uses:
+
 - **Playwright** for browser automation (headless Chromium).
 - **Cheerio** for HTML parsing (jQuery-like API).
 - **Supabase client** for database operations.
@@ -193,6 +201,7 @@ This scraper uses:
 ## Testing Strategy
 
 Currently no tests exist. When adding tests:
+
 - Place test files in `tests/` directory.
 - Use vitest framework.
 - File naming: `filename.test.ts` pattern.

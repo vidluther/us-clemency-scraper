@@ -1,4 +1,4 @@
-export interface ClemencyGrant {
+export interface ParsedGrant {
   recipient_name: string;
   warrant_url: string | null;
   district: string | null;
@@ -9,7 +9,11 @@ export interface ClemencyGrant {
   source_url: string;
 }
 
-export type PageFormat = "trump2025" | "table-five" | "table-four" | "key-value";
+export type PageFormat =
+  | "trump2025"
+  | "table-five"
+  | "table-four"
+  | "key-value";
 
 /** Parser output — base_slug (e.g. "obama") since the parser doesn't know the specific term */
 export interface ParsedStatRow {
@@ -23,9 +27,9 @@ export interface ParsedStatRow {
   petitions_closed: number | null;
 }
 
-/** DB row shape — term_slug resolved by the scraper via terms table lookup */
+/** DB row shape — presidential_term_id resolved by the scraper via presidential_term table lookup */
 export interface ClemencyStatRow {
-  term_slug: string;
+  presidential_term_id: string;
   fiscal_year: number;
   petitions_received: number | null;
   total_granted: number | null;
@@ -45,4 +49,12 @@ export interface PresidentSource {
   pardons?: string;
   /** Separate commutations page */
   commutations?: string;
+}
+
+/** Sentence parsing result */
+export interface ParsedSentence {
+  sentence_in_months: number | null;
+  fine: number | null;
+  restitution: number | null;
+  original_sentence: string | null;
 }

@@ -77,9 +77,7 @@ async function scrapePresident(slugFilter?: string): Promise<void> {
 
     if (allGrants.length > 0) {
       const result = await upsertGrants(allGrants, source.slugs);
-      console.log(
-        `  Inserted: ${result.inserted}, Skipped: ${result.skipped}`,
-      );
+      console.log(`  Inserted: ${result.inserted}, Skipped: ${result.skipped}`);
     }
   }
 }
