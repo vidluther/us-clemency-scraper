@@ -96,11 +96,13 @@ function buildColumnDescriptors(
     const ths = $tr.find("th");
     if (!ths.length) return;
 
-    if (!grid[headerRowIdx]) grid[headerRowIdx] = new Array(MAXCOLS).fill(undefined);
+    if (!grid[headerRowIdx])
+      grid[headerRowIdx] = new Array(MAXCOLS).fill(undefined);
 
     let colIdx = 0;
     ths.each((_, th) => {
-      while (colIdx < MAXCOLS && grid[headerRowIdx]?.[colIdx] !== undefined) colIdx++;
+      while (colIdx < MAXCOLS && grid[headerRowIdx]?.[colIdx] !== undefined)
+        colIdx++;
       if (colIdx >= MAXCOLS) return;
 
       const text = $(th).text().trim();

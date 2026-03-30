@@ -1,10 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
-import type { ClemencyGrant, ClemencyStatRow } from "./parsers/types.js";
+import type { ParsedGrant, ClemencyStatRow } from "./parsers/types.js";
+import { parseSentence } from "./parsers/sentences.js";
 
 const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseKey =
-  process.env.SUPABASE_PUBLISHABLE_KEY ??
-  process.env.SUPABASE_ANON_KEY!;
+  process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -18,11 +18,14 @@ function from(table: string) {
 /** Cache of slug → term UUID */
 const termIdCache = new Map<string, string>();
 
+/** Cache of recipient name → recipient UUID */
+const recipientIdCache = new Map<string, string>();
+
 export async function getTermId(slug: string): Promise<string> {
   const cached = termIdCache.get(slug);
   if (cached) return cached;
 
-  const { data, error } = await from("terms")
+  const { data, error } = await from("presidential_term")
     .select("id")
     .eq("slug", slug)
     .single();
@@ -43,7 +46,7 @@ export async function getTermForDate(
   if (slugs.length === 1) return slugs[0];
 
   // For multi-term presidents, find the matching term by date
-  const { data, error } = await from("terms")
+  const { data, error } = await from("presidential_term")
     .select("id, slug, start_date, end_date")
     .in("slug", slugs)
     .order("start_date");
@@ -79,7 +82,7 @@ interface TermRecord {
 
 /** Fetch all terms from the DB, ordered by start_date */
 export async function getAllTerms(): Promise<TermRecord[]> {
-  const { data, error } = await from("terms")
+  const { data, error } = await from("presidential_term")
     .select("slug, start_date, end_date")
     .order("start_date");
 
@@ -129,8 +132,49 @@ export function resolveTermSlug(
   return matching[0].slug;
 }
 
+// ---------------------------------------------------------------------------
+// Recipient management
+// ---------------------------------------------------------------------------
+
+export async function getOrCreateRecipient(name: string): Promise<string> {
+  const cached = recipientIdCache.get(name);
+  if (cached) return cached;
+
+  // Try to find existing recipient
+  const { data: existing, error: findError } = await from("recipient")
+    .select("id")
+    .eq("name", name)
+    .single();
+
+  if (findError && findError.code !== "PGRST116") {
+    throw new Error(`Error finding recipient "${name}": ${findError.message}`);
+  }
+
+  if (existing) {
+    recipientIdCache.set(name, existing.id);
+    return existing.id;
+  }
+
+  // Create new recipient
+  const { data: created, error: createError } = await from("recipient")
+    .insert({ name })
+    .select("id")
+    .single();
+
+  if (createError || !created) {
+    throw new Error(`Failed to create recipient "${name}": ${createError?.message}`);
+  }
+
+  recipientIdCache.set(name, created.id);
+  return created.id;
+}
+
+// ---------------------------------------------------------------------------
+// Grant (pardon) upsertion with recipient and sentence handling
+// ---------------------------------------------------------------------------
+
 export async function upsertGrants(
-  grants: ClemencyGrant[],
+  grants: ParsedGrant[],
   slugs: string[],
 ): Promise<{ inserted: number; skipped: number }> {
   let inserted = 0;
@@ -143,17 +187,21 @@ export async function upsertGrants(
     const rows = await Promise.all(
       batch.map(async (g) => {
         const slug = await getTermForDate(slugs, g.grant_date);
-        const termId = await getTermId(slug);
+        const presidential_term_id = await getTermId(slug);
+        const recipient_id = await getOrCreateRecipient(g.recipient_name);
+
         return {
-          term_id: termId,
-          recipient_name: g.recipient_name,
+          recipient_id,
+          presidential_term_id,
           warrant_url: g.warrant_url,
           district: g.district,
-          sentence: g.sentence,
           offense: g.offense,
           clemency_type: g.clemency_type,
           grant_date: g.grant_date,
           source_url: g.source_url,
+          // Include sentence for later processing
+          _sentence: g.sentence,
+          _recipient_name: g.recipient_name,
         };
       }),
     );
@@ -161,7 +209,7 @@ export async function upsertGrants(
     // Deduplicate within the batch by unique key
     const seen = new Set<string>();
     const deduped = rows.filter((r) => {
-      const key = `${r.term_id}|${r.recipient_name}|${r.grant_date}|${r.clemency_type}`;
+      const key = `${r.recipient_id}|${r.grant_date}|${r.clemency_type}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -173,23 +221,98 @@ export async function upsertGrants(
       );
     }
 
-    const { data, error } = await from("clemency_grants")
-      .upsert(deduped, {
-        onConflict: "term_id,recipient_name,grant_date,clemency_type",
-        ignoreDuplicates: false,
-      })
-      .select("id");
+    // Extract sentences for later insertion
+    const sentencesData: Array<{
+      pardon_id: string;
+      recipient_id: string;
+      original_sentence: string | null;
+    }> = [];
+
+    // Insert pardons and collect their IDs for sentence insertion
+    const { data: insertedPardons, error } = await from("pardon")
+      .upsert(
+        deduped.map((r) => ({
+          recipient_id: r.recipient_id,
+          presidential_term_id: r.presidential_term_id,
+          warrant_url: r.warrant_url,
+          district: r.district,
+          offense: r.offense,
+          clemency_type: r.clemency_type,
+          grant_date: r.grant_date,
+          source_url: r.source_url,
+        })),
+        {
+          onConflict: "recipient_id,grant_date,clemency_type",
+          ignoreDuplicates: false,
+        },
+      )
+      .select("id, recipient_id");
 
     if (error) {
       console.error(`Error upserting batch at index ${i}:`, error.message);
       skipped += batch.length;
     } else {
-      inserted += data?.length ?? 0;
+      // Prepare sentences for insertion
+      for (let idx = 0; idx < insertedPardons?.length; idx++) {
+        const pardon = insertedPardons[idx];
+        const originalData = deduped[idx];
+        if (originalData._sentence) {
+          sentencesData.push({
+            pardon_id: pardon.id,
+            recipient_id: pardon.recipient_id,
+            original_sentence: originalData._sentence,
+          });
+        }
+      }
+
+      // Insert sentences
+      if (sentencesData.length > 0) {
+        await insertSentences(sentencesData);
+      }
+
+      inserted += insertedPardons?.length ?? 0;
     }
   }
 
   return { inserted, skipped };
 }
+
+async function insertSentences(
+  sentences: Array<{
+    pardon_id: string;
+    recipient_id: string;
+    original_sentence: string | null;
+  }>,
+): Promise<void> {
+  if (sentences.length === 0) return;
+
+  // Parse each sentence and expand multi-count sentences into separate rows
+  const parsedRows = sentences.flatMap((s) => {
+    if (!s.original_sentence) return [];
+
+    const parsed = parseSentence(s.original_sentence);
+    return parsed.map((components) => ({
+      pardon_id: s.pardon_id,
+      recipient_id: s.recipient_id,
+      original_sentence: s.original_sentence,
+      sentence_in_months: components.sentence_in_months,
+      fine: components.fine,
+      restitution: components.restitution,
+    }));
+  });
+
+  if (parsedRows.length === 0) return;
+
+  const { error } = await from("sentence").insert(parsedRows);
+
+  if (error) {
+    console.error("Error inserting sentences:", error.message);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Statistics upsertion
+// ---------------------------------------------------------------------------
 
 export async function upsertStatistics(
   rows: ClemencyStatRow[],
@@ -201,15 +324,18 @@ export async function upsertStatistics(
   for (let i = 0; i < rows.length; i += 50) {
     const batch = rows.slice(i, i + 50);
 
-    const { data, error } = await from("clemency_statistics")
+    const { data, error } = await from("clemency_statistic")
       .upsert(batch, {
-        onConflict: "term_slug,fiscal_year",
+        onConflict: "presidential_term_id,fiscal_year",
         ignoreDuplicates: false,
       })
       .select("id");
 
     if (error) {
-      console.error(`Error upserting stats batch at index ${i}:`, error.message);
+      console.error(
+        `Error upserting stats batch at index ${i}:`,
+        error.message,
+      );
       skipped += batch.length;
     } else {
       inserted += data?.length ?? 0;
@@ -217,4 +343,52 @@ export async function upsertStatistics(
   }
 
   return { inserted, skipped };
+}
+
+// ---------------------------------------------------------------------------
+// Sentence parsing and updating
+// ---------------------------------------------------------------------------
+
+/**
+ * Update sentences with parsed data
+ * This can be called after scraping to parse all unparsed sentences
+ */
+export async function updateParsedSentences(
+  sentences: Array<{
+    id: string;
+    sentence_in_months: number | null;
+    fine: number | null;
+    restitution: number | null;
+  }>,
+): Promise<void> {
+  if (sentences.length === 0) return;
+
+  const { error } = await from("sentence").upsert(sentences);
+
+  if (error) {
+    throw new Error(`Failed to update parsed sentences: ${error.message}`);
+  }
+}
+
+/**
+ * Fetch all unparsed sentences (where sentence_in_months, fine, restitution are all null)
+ */
+export async function fetchUnparsedSentences(): Promise<
+  Array<{
+    id: string;
+    original_sentence: string;
+  }>
+> {
+  const { data, error } = await from("sentence")
+    .select("id, original_sentence")
+    .is("sentence_in_months", null)
+    .is("fine", null)
+    .is("restitution", null)
+    .not("original_sentence", "is", null);
+
+  if (error) {
+    throw new Error(`Failed to fetch unparsed sentences: ${error.message}`);
+  }
+
+  return data || [];
 }

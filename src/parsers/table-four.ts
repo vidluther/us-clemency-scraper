@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import type { ClemencyGrant } from "./types.js";
+import type { ParsedGrant } from "./types.js";
 
 /**
  * Format C — Bush W. (separate pardons/commutations pages).
@@ -14,9 +14,9 @@ export function parseTableFour(
   html: string,
   clemencyType: "pardon" | "commutation",
   sourceUrl: string,
-): ClemencyGrant[] {
+): ParsedGrant[] {
   const $ = cheerio.load(html);
-  const grants: ClemencyGrant[] = [];
+  const grants: ParsedGrant[] = [];
 
   const headings = $("h2");
 
@@ -62,9 +62,18 @@ function parseDate(text: string): string | null {
   if (!match) return null;
 
   const months: Record<string, string> = {
-    January: "01", February: "02", March: "03", April: "04",
-    May: "05", June: "06", July: "07", August: "08",
-    September: "09", October: "10", November: "11", December: "12",
+    January: "01",
+    February: "02",
+    March: "03",
+    April: "04",
+    May: "05",
+    June: "06",
+    July: "07",
+    August: "08",
+    September: "09",
+    October: "10",
+    November: "11",
+    December: "12",
   };
 
   const month = months[match[1]];
