@@ -31,16 +31,17 @@ CREATE TABLE pardonned.pardon (
   warrant_url TEXT,
   district TEXT,
   offense TEXT NOT NULL,
-  clemency_type TEXT NOT NULL CHECK (clemency_type IN ('pardon', 'commutation')),
+  offense_category TEXT NOT NULL CHECK (offense_category IN ('violent crime', 'fraud', 'drug offense', 'FACE act', 'immigration', 'firearms', 'financial crime', 'other')),
+  pardon_type TEXT NOT NULL CHECK (pardon_type IN ('pardon', 'commutation')),
   grant_date DATE NOT NULL,
   source_url TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(recipient_id, grant_date, clemency_type)
+  UNIQUE(recipient_id, grant_date, pardon_type)
 );
 
 -- Sentences table (new - replaces clemency_sentences)
-CREATE TABLE pardonned.sentence (
+CREATE TABLE pardonned.sentences (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   pardon_id UUID NOT NULL REFERENCES pardonned.pardon(id) ON DELETE CASCADE,
   recipient_id UUID NOT NULL REFERENCES pardonned.recipient(id) ON DELETE CASCADE,
@@ -52,8 +53,8 @@ CREATE TABLE pardonned.sentence (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Clemency statistics table
-CREATE TABLE pardonned.clemency_statistics (
+-- pardonn_statistics table
+CREATE TABLE pardonned.pardon_statistics (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   presidential_term_id UUID NOT NULL REFERENCES pardonned.presidential_term(id),
   fiscal_year INT NOT NULL,
@@ -70,6 +71,6 @@ CREATE TABLE pardonned.clemency_statistics (
 );
 
 -- Grant API access to the pardonned schema
-GRANT USAGE ON SCHEMA pardonned TO anon, authenticated;
-GRANT ALL ON ALL TABLES IN SCHEMA pardonned TO anon, authenticated;
-ALTER DEFAULT PRIVILEGES IN SCHEMA pardonned GRANT ALL ON TABLES TO anon, authenticated;
+GRANT USAGE ON SCHEMA pardonned TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA pardonned TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA pardonned GRANT ALL ON TABLES TO anon, authenticated, service_role;

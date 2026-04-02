@@ -6,7 +6,7 @@ CREATE OR REPLACE VIEW pardonned.pardon_detail AS
 SELECT
   p.id,
   p.grant_date,
-  p.clemency_type,
+  p.pardon_type,
   p.offense,
   p.district,
   p.warrant_url,
@@ -26,7 +26,7 @@ CREATE OR REPLACE VIEW pardonned.pardon_with_sentence AS
 SELECT
   p.id,
   p.grant_date,
-  p.clemency_type,
+  p.pardon_type,
   p.offense,
   p.district,
   p.warrant_url,
@@ -43,9 +43,9 @@ SELECT
 FROM pardonned.pardon p
 JOIN pardonned.recipient r ON r.id = p.recipient_id
 JOIN pardonned.presidential_term pt ON pt.id = p.presidential_term_id
-LEFT JOIN pardonned.sentence s ON s.pardon_id = p.id;
+LEFT JOIN pardonned.sentences s ON s.pardon_id = p.id;
 
--- Statistics by term: clemency stats joined with president info
+-- Statistics by term: pardon stats joined with president info
 CREATE OR REPLACE VIEW pardonned.statistics_by_term AS
 SELECT
   cs.id,
@@ -62,7 +62,7 @@ SELECT
   pt.term_number,
   pt.start_date AS term_start_date,
   pt.end_date AS term_end_date
-FROM pardonned.clemency_statistics cs
+FROM pardonned.pardon_statistics cs
 JOIN pardonned.presidential_term pt ON pt.id = cs.presidential_term_id
 ORDER BY cs.fiscal_year DESC;
 

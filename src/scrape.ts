@@ -7,12 +7,12 @@ import { parseTrump2025 } from "./parsers/trump2025.js";
 import { parseTableFive } from "./parsers/table-five.js";
 import { parseTableFour } from "./parsers/table-four.js";
 import { parseKeyValue } from "./parsers/key-value.js";
-import type { ClemencyGrant } from "./parsers/types.js";
+import type { ParsedGrant } from "./parsers/types.js";
 
 async function scrapePage(
   url: string,
-  clemencyType?: "pardon" | "commutation",
-): Promise<ClemencyGrant[]> {
+  pardonType?: "pardon" | "commutation",
+): Promise<ParsedGrant[]> {
   console.log(`  Fetching: ${url}`);
   const html = await fetchPageHtml(url);
   const format = detectFormat(html);
@@ -22,11 +22,11 @@ async function scrapePage(
     case "trump2025":
       return parseTrump2025(html, url);
     case "table-five":
-      return parseTableFive(html, clemencyType!, url);
+      return parseTableFive(html, pardonType!, url);
     case "table-four":
-      return parseTableFour(html, clemencyType!, url);
+      return parseTableFour(html, pardonType!, url);
     case "key-value":
-      return parseKeyValue(html, clemencyType!, url);
+      return parseKeyValue(html, pardonType!, url);
   }
 }
 
@@ -57,7 +57,7 @@ async function scrapePresident(slugFilter?: string): Promise<void> {
   for (const source of sources) {
     console.log(`\nScraping: ${source.slugs.join(", ")}`);
 
-    let allGrants: ClemencyGrant[] = [];
+    let allGrants: ParsedGrant[] = [];
 
     if (source.combined) {
       const grants = await scrapePage(source.combined);

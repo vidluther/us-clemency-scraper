@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import type { ParsedGrant } from "./types.js";
+import { categorizeOffense } from "./categorize.js";
 
 /**
  * Format A — Trump 2025 combined page.
@@ -14,10 +15,7 @@ import type { ParsedGrant } from "./types.js";
  * - Name cell links to warrant PDF
  * - Skip headings whose next sibling is a <p> (links to external pages like J6)
  */
-export function parseTrump2025(
-  html: string,
-  sourceUrl: string,
-): ParsedGrant[] {
+export function parseTrump2025(html: string, sourceUrl: string): ParsedGrant[] {
   const $ = cheerio.load(html);
   const grants: ParsedGrant[] = [];
 
@@ -56,14 +54,14 @@ export function parseTrump2025(
       const offense = cells.eq(3).text().trim();
 
       // Determine clemency type from heading counts
-      let clemencyType: "pardon" | "commutation";
+      let pardonType: "pardon" | "commutation";
       if (commutationCount === 0) {
-        clemencyType = "pardon";
+        pardonType = "pardon";
       } else if (pardonCount === 0) {
-        clemencyType = "commutation";
+        pardonType = "commutation";
       } else {
         // Mixed section: first N are pardons, rest are commutations
-        clemencyType = rowIdx < pardonCount ? "pardon" : "commutation";
+        pardonType = rowIdx < pardonCount ? "pardon" : "commutation";
       }
 
       grants.push({
@@ -72,7 +70,8 @@ export function parseTrump2025(
         district,
         sentence,
         offense,
-        clemency_type: clemencyType,
+        offense_category: categorizeOffense(offense),
+        pardon_type: pardonType,
         grant_date: dateStr,
         source_url: sourceUrl,
       });

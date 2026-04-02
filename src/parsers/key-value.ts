@@ -1,5 +1,8 @@
 import * as cheerio from "cheerio";
 import type { ParsedGrant } from "./types.js";
+import { categorizeOffense } from "./categorize.js";
+
+type CheerioTable = cheerio.Cheerio<any>;
 
 /**
  * Format D — Obama and earlier (separate pardons/commutations pages).
@@ -22,7 +25,7 @@ import type { ParsedGrant } from "./types.js";
  */
 export function parseKeyValue(
   html: string,
-  clemencyType: "pardon" | "commutation",
+  pardonType: "pardon" | "commutation",
   sourceUrl: string,
 ): ParsedGrant[] {
   const $ = cheerio.load(html);
@@ -50,7 +53,7 @@ export function parseKeyValue(
         const tableGrants = parseTable(
           $,
           $(tbl),
-          clemencyType,
+          pardonType,
           sourceUrl,
           dateStr,
         );
@@ -70,7 +73,7 @@ export function parseKeyValue(
     const tableGrants = parseTable(
       $,
       $(table),
-      clemencyType,
+      pardonType,
       sourceUrl,
       null, // date will come from in-line date rows
     );
@@ -82,8 +85,8 @@ export function parseKeyValue(
 
 function parseTable(
   $: cheerio.CheerioAPI,
-  table: cheerio.Cheerio<cheerio.Element>,
-  clemencyType: "pardon" | "commutation",
+  table: CheerioTable,
+  pardonType: "pardon" | "commutation",
   sourceUrl: string,
   defaultDate: string | null,
 ): ParsedGrant[] {
@@ -108,7 +111,7 @@ function parseTable(
             // Flush previous person
             if (current?.name && currentDate) {
               grants.push(
-                buildGrant(current, clemencyType, currentDate, sourceUrl),
+                buildGrant(current, pardonType, currentDate, sourceUrl),
               );
             }
             current = {
@@ -134,18 +137,14 @@ function parseTable(
       if (parsed) {
         // Date separator row
         if (current?.name) {
-          grants.push(
-            buildGrant(current, clemencyType, currentDate!, sourceUrl),
-          );
+          grants.push(buildGrant(current, pardonType, currentDate!, sourceUrl));
           current = null;
         }
         currentDate = parsed;
       } else if (isNameValue(cellText)) {
         // Single-cell name row (older Obama format: name in one cell, no empty first col)
         if (current?.name && currentDate) {
-          grants.push(
-            buildGrant(current, clemencyType, currentDate, sourceUrl),
-          );
+          grants.push(buildGrant(current, pardonType, currentDate, sourceUrl));
         }
         current = {
           name: cellText,
@@ -167,9 +166,7 @@ function parseTable(
       if (isNameValue(value)) {
         // Flush previous person
         if (current?.name && currentDate) {
-          grants.push(
-            buildGrant(current, clemencyType, currentDate, sourceUrl),
-          );
+          grants.push(buildGrant(current, pardonType, currentDate, sourceUrl));
         }
         current = {
           name: value,
@@ -214,8 +211,8 @@ function parseTable(
   });
 
   // Flush last person
-  if (current?.name && currentDate) {
-    grants.push(buildGrant(current, clemencyType, currentDate, sourceUrl));
+  if (current !== null && currentDate) {
+    grants.push(buildGrant(current, pardonType, currentDate, sourceUrl));
   }
 
   return grants;
@@ -278,7 +275,7 @@ function appendToField(
 
 function buildGrant(
   person: PersonRecord,
-  clemencyType: "pardon" | "commutation",
+  pardonType: "pardon" | "commutation",
   grantDate: string,
   sourceUrl: string,
 ): ParsedGrant {
@@ -304,7 +301,8 @@ function buildGrant(
     district,
     sentence,
     offense,
-    clemency_type: clemencyType,
+    offense_category: categorizeOffense(offense),
+    pardon_type: pardonType,
     grant_date: grantDate,
     source_url: sourceUrl,
   };

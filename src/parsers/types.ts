@@ -1,10 +1,21 @@
+export type OffenseCategory =
+  | "violent crime"
+  | "fraud"
+  | "drug offense"
+  | "FACE act"
+  | "immigration"
+  | "firearms"
+  | "financial crime"
+  | "other";
+
 export interface ParsedGrant {
   recipient_name: string;
   warrant_url: string | null;
   district: string | null;
   sentence: string | null;
   offense: string;
-  clemency_type: "pardon" | "commutation";
+  offense_category: OffenseCategory;
+  pardon_type: "pardon" | "commutation";
   grant_date: string; // YYYY-MM-DD
   source_url: string;
 }

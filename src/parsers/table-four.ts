@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import type { ParsedGrant } from "./types.js";
+import { categorizeOffense } from "./categorize.js";
 
 /**
  * Format C — Bush W. (separate pardons/commutations pages).
@@ -12,7 +13,7 @@ import type { ParsedGrant } from "./types.js";
  */
 export function parseTableFour(
   html: string,
-  clemencyType: "pardon" | "commutation",
+  pardonType: "pardon" | "commutation",
   sourceUrl: string,
 ): ParsedGrant[] {
   const $ = cheerio.load(html);
@@ -47,7 +48,8 @@ export function parseTableFour(
         district,
         sentence,
         offense,
-        clemency_type: clemencyType,
+        offense_category: categorizeOffense(offense),
+        pardon_type: pardonType,
         grant_date: dateStr,
         source_url: sourceUrl,
       });
