@@ -12,7 +12,9 @@ export interface ParsedSentenceComponents {
  * Parse a sentence string and extract structured components
  * Returns multiple parsed sentences for multi-count cases
  */
-export function parseSentence(sentenceText: string): ParsedSentenceComponents[] {
+export function parseSentence(
+  sentenceText: string,
+): ParsedSentenceComponents[] {
   if (!sentenceText) return [];
 
   // Check for multi-count patterns (e.g., "1. ... 2. ...")
@@ -27,7 +29,8 @@ export function parseSentence(sentenceText: string): ParsedSentenceComponents[] 
   const counts: string[] = [];
   for (let i = 0; i < matches.length; i++) {
     const startIdx = matches[i].index + matches[i].length;
-    const endIdx = i + 1 < matches.length ? matches[i + 1].index : sentenceText.length;
+    const endIdx =
+      i + 1 < matches.length ? matches[i + 1].index : sentenceText.length;
     counts.push(sentenceText.slice(startIdx, endIdx).trim());
   }
 
@@ -92,9 +95,7 @@ function extractRestitution(text: string): number | null {
   if (amount !== null) return amount;
 
   // Try general dollar amount if "restitution" is mentioned nearby
-  const restitutionContext = text.match(
-    /\$([\d,]+\.?\d*)[^;$]*restitution/i,
-  );
+  const restitutionContext = text.match(/\$([\d,]+\.?\d*)[^;$]*restitution/i);
   if (restitutionContext) {
     const amountStr = restitutionContext[1].replace(/,/g, "");
     const amount = parseFloat(amountStr);
@@ -121,10 +122,7 @@ function extractFine(text: string): number | null {
 
 function extractDollarAmount(text: string, keyword: string): number | null {
   // Match patterns like "$36,769,153.97 restitution" or "$100,000,000 fine"
-  const pattern = new RegExp(
-    `\\$([\\d,]+\\.?\\d*)\\s*(?:${keyword})`,
-    "i",
-  );
+  const pattern = new RegExp(`\\$([\\d,]+\\.?\\d*)\\s*(?:${keyword})`, "i");
   const match = text.match(pattern);
 
   if (match) {

@@ -1,6 +1,8 @@
 import * as cheerio from "cheerio";
 import type { ParsedStatRow } from "./types.js";
 
+type CheerioEl = cheerio.Cheerio<any>;
+
 // ---------------------------------------------------------------------------
 // President heading → base slug mapping
 // ---------------------------------------------------------------------------
@@ -78,7 +80,7 @@ interface ColMap {
 
 function buildColumnDescriptors(
   $: cheerio.CheerioAPI,
-  table: cheerio.Cheerio<cheerio.Element>,
+  table: CheerioEl,
 ): ColumnDescriptor[] {
   const MAXCOLS = 20;
   const grid: (string | undefined)[][] = [];
@@ -201,7 +203,7 @@ function buildColMap(descs: ColumnDescriptor[]): ColMap {
 
 function sumCells(
   $: cheerio.CheerioAPI,
-  cells: cheerio.Cheerio<cheerio.Element>,
+  cells: CheerioEl,
   indices: number[],
 ): number | null {
   const nums = indices

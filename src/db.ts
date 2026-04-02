@@ -164,7 +164,9 @@ export async function getOrCreateRecipient(name: string): Promise<string> {
     .single();
 
   if (createError || !created) {
-    throw new Error(`Failed to create recipient "${name}": ${createError?.message}`);
+    throw new Error(
+      `Failed to create recipient "${name}": ${createError?.message}`,
+    );
   }
 
   recipientIdCache.set(name, created.id);
@@ -198,10 +200,10 @@ export async function upsertGrants(
           warrant_url: g.warrant_url,
           district: g.district,
           offense: g.offense,
-          clemency_type: g.clemency_type,
+          offense_category: g.offense_category,
+          pardon_type: g.pardon_type,
           grant_date: g.grant_date,
           source_url: g.source_url,
-          // Include sentence for later processing
           _sentence: g.sentence,
           _recipient_name: g.recipient_name,
         };
@@ -211,7 +213,7 @@ export async function upsertGrants(
     // Deduplicate within the batch by unique key
     const seen = new Set<string>();
     const deduped = rows.filter((r) => {
-      const key = `${r.recipient_id}|${r.grant_date}|${r.clemency_type}`;
+      const key = `${r.recipient_id}|${r.grant_date}|${r.pardon_type}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -239,12 +241,13 @@ export async function upsertGrants(
           warrant_url: r.warrant_url,
           district: r.district,
           offense: r.offense,
-          clemency_type: r.clemency_type,
+          offense_category: r.offense_category,
+          pardon_type: r.pardon_type,
           grant_date: r.grant_date,
           source_url: r.source_url,
         })),
         {
-          onConflict: "recipient_id,grant_date,clemency_type",
+          onConflict: "recipient_id,grant_date,pardon_type",
           ignoreDuplicates: false,
         },
       )
@@ -305,7 +308,7 @@ async function insertSentences(
 
   if (parsedRows.length === 0) return;
 
-  const { error } = await from("sentence").insert(parsedRows);
+  const { error } = await from("sentences").insert(parsedRows);
 
   if (error) {
     console.error("Error inserting sentences:", error.message);
@@ -326,7 +329,7 @@ export async function upsertStatistics(
   for (let i = 0; i < rows.length; i += 50) {
     const batch = rows.slice(i, i + 50);
 
-    const { data, error } = await from("clemency_statistics")
+    const { data, error } = await from("pardon_statistics")
       .upsert(batch, {
         onConflict: "presidential_term_id,fiscal_year",
         ignoreDuplicates: false,
@@ -365,7 +368,7 @@ export async function updateParsedSentences(
 ): Promise<void> {
   if (sentences.length === 0) return;
 
-  const { error } = await from("sentence").upsert(sentences);
+  const { error } = await from("sentences").upsert(sentences);
 
   if (error) {
     throw new Error(`Failed to update parsed sentences: ${error.message}`);
@@ -381,7 +384,7 @@ export async function fetchUnparsedSentences(): Promise<
     original_sentence: string;
   }>
 > {
-  const { data, error } = await from("sentence")
+  const { data, error } = await from("sentences")
     .select("id, original_sentence")
     .is("sentence_in_months", null)
     .is("fine", null)

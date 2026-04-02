@@ -28,13 +28,19 @@ pnpm run scrape:obama       # Scrape Obama 2009-2017
 pnpm run scrape:bush        # Scrape Bush 2001-2009
 ```
 
+### Formatting
+
+```bash
+pnpm run format               # Run oxfmt on all files
+```
+
 ### Linting
 
 ```bash
 pnpm run lint               # Run oxlint on src/
 ```
 
-No formatter is configured. The codebase uses oxlint for linting only.
+The codebase uses oxfmt for formatting and oxlint for linting. Run `pnpm run format` before every commit.
 
 ### Testing
 

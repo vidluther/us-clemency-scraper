@@ -1,6 +1,11 @@
 import "dotenv/config";
 import { fetchPageHtml, closeBrowser } from "./browser.js";
-import { getAllTerms, resolveTermSlug, upsertStatistics, getTermId } from "./db.js";
+import {
+  getAllTerms,
+  resolveTermSlug,
+  upsertStatistics,
+  getTermId,
+} from "./db.js";
 import { parseStatsPage } from "./parsers/stats.js";
 import type { ClemencyStatRow } from "./parsers/types.js";
 

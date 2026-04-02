@@ -5,8 +5,8 @@
 ALTER TABLE pardonned.presidential_term ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pardonned.recipient ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pardonned.pardon ENABLE ROW LEVEL SECURITY;
-ALTER TABLE pardonned.sentence ENABLE ROW LEVEL SECURITY;
-ALTER TABLE pardonned.clemency_statistics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pardonned.sentences  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pardonned.pardon_statistics ENABLE ROW LEVEL SECURITY;
 
 -- 2. Replace the overly permissive GRANT ALL with SELECT-only
 REVOKE ALL ON ALL TABLES IN SCHEMA pardonned FROM anon;
@@ -37,10 +37,10 @@ CREATE POLICY "anon_read_pardon"
   ON pardonned.pardon FOR SELECT TO anon USING (true);
 
 CREATE POLICY "anon_read_sentence"
-  ON pardonned.sentence FOR SELECT TO anon USING (true);
+  ON pardonned.sentences FOR SELECT TO anon USING (true);
 
-CREATE POLICY "anon_read_clemency_statistics"
-  ON pardonned.clemency_statistics FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_read_pardon_statistics"
+  ON pardonned.pardon_statistics FOR SELECT TO anon USING (true);
 
 -- 5. Read-only policies for authenticated (same access as anon for this public dataset)
 CREATE POLICY "authenticated_read_presidential_term"
@@ -53,7 +53,7 @@ CREATE POLICY "authenticated_read_pardon"
   ON pardonned.pardon FOR SELECT TO authenticated USING (true);
 
 CREATE POLICY "authenticated_read_sentence"
-  ON pardonned.sentence FOR SELECT TO authenticated USING (true);
+  ON pardonned.sentences FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY "authenticated_read_clemency_statistics"
-  ON pardonned.clemency_statistics FOR SELECT TO authenticated USING (true);
+CREATE POLICY "authenticated_read_pardon_statistics"
+  ON pardonned.pardon_statistics FOR SELECT TO authenticated USING (true);
