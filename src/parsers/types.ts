@@ -16,7 +16,7 @@ export interface ParsedGrant {
   offense: string;
   offense_category: OffenseCategory;
   pardon_type: "pardon" | "commutation";
-  grant_date: string; // YYYY-MM-DD
+  grant_date: string;
   source_url: string;
 }
 
@@ -26,43 +26,13 @@ export type PageFormat =
   | "table-four"
   | "key-value";
 
-/** Parser output — base_slug (e.g. "obama") since the parser doesn't know the specific term */
-export interface ParsedStatRow {
-  base_slug: string;
-  fiscal_year: number;
-  petitions_received: number | null;
-  total_granted: number | null;
-  pardons_granted: number | null;
-  commutations_granted: number | null;
-  petitions_denied: number | null;
-  petitions_closed: number | null;
-}
-
-/** DB row shape — presidential_term_id resolved by the scraper via presidential_term table lookup */
-export interface ClemencyStatRow {
-  presidential_term_id: string;
-  fiscal_year: number;
-  petitions_received: number | null;
-  total_granted: number | null;
-  pardons_granted: number | null;
-  commutations_granted: number | null;
-  petitions_denied: number | null;
-  petitions_closed: number | null;
-  source_url: string;
-}
-
 export interface PresidentSource {
-  /** Slugs this source covers (single or pipe-separated for multi-term) */
   slugs: string[];
-  /** Combined page with both pardons and commutations (Trump 2025 style) */
   combined?: string;
-  /** Separate pardons page */
   pardons?: string;
-  /** Separate commutations page */
   commutations?: string;
 }
 
-/** Sentence parsing result */
 export interface ParsedSentence {
   sentence_in_months: number | null;
   fine: number | null;

@@ -1,4 +1,4 @@
-INSERT INTO pardonned.presidential_term (slug, president_name, term_number, start_date, end_date) VALUES
+INSERT INTO pardonned.administrations (slug, president_name, term_number, start_date, end_date) VALUES
   -- Historical (McKinley → LBJ)
   ('mckinley-1', 'William McKinley', 1, '1897-03-04', '1901-03-04'),
   ('mckinley-2', 'William McKinley', 2, '1901-03-04', '1901-09-14'),

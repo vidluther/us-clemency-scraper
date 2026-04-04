@@ -1,0 +1,67 @@
+{
+  "info": {
+    "_postman_id": "ce519428-fa59-49b6-9e3e-2576374b2f37",
+    "name": "pardonned",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "19671261"
+  },
+  "item": [
+    {
+      "name": "Get All Pardons",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept-Profile",
+            "value": "pardonned",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{API_HOST}}/pardon_detail",
+          "host": [
+            "{{API_HOST}}"
+          ],
+          "path": [
+            "pardon_detail"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{API_KEY}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ]
+}

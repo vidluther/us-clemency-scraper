@@ -1,0 +1,22 @@
+{
+	"id": "2a5f124d-a111-4fdd-b96a-6a5184e9f939",
+	"name": "pardonned local",
+	"values": [
+		{
+			"key": "API_HOST",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "API_KEY",
+			"value": "",
+			"type": "default",
+			"enabled": true
+		}
+	],
+	"color": null,
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2026-04-04T17:12:37.750Z",
+	"_postman_exported_using": "Postman/12.4.6"
+}
