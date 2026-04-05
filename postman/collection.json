@@ -19,12 +19,8 @@
         ],
         "url": {
           "raw": "{{API_HOST}}/pardon_detail",
-          "host": [
-            "{{API_HOST}}"
-          ],
-          "path": [
-            "pardon_detail"
-          ]
+          "host": ["{{API_HOST}}"],
+          "path": ["pardon_detail"]
         }
       },
       "response": []
@@ -47,9 +43,7 @@
         "type": "text/javascript",
         "packages": {},
         "requests": {},
-        "exec": [
-          ""
-        ]
+        "exec": [""]
       }
     },
     {
@@ -58,9 +52,7 @@
         "type": "text/javascript",
         "packages": {},
         "requests": {},
-        "exec": [
-          ""
-        ]
+        "exec": [""]
       }
     }
   ]

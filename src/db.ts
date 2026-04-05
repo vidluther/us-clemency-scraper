@@ -2,12 +2,32 @@ import { createClient } from "@supabase/supabase-js";
 import type { ParsedGrant } from "./parsers/types.js";
 import { parseSentence } from "./parsers/sentences.js";
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ??
-  process.env.SUPABASE_PUBLISHABLE_KEY ??
-  process.env.SUPABASE_ANON_KEY!;
+function getEnvVars(): { url: string; key: string } {
+  const missing: string[] = [];
 
+  const supabaseUrl = process.env.SUPABASE_URL;
+  if (!supabaseUrl) missing.push("SUPABASE_URL");
+
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.SUPABASE_PUBLISHABLE_KEY ??
+    process.env.SUPABASE_ANON_KEY;
+  if (!key) {
+    missing.push(
+      "SUPABASE_SERVICE_ROLE_KEY or SUPABASE_PUBLISHABLE_KEY or SUPABASE_ANON_KEY",
+    );
+  }
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing required environment variable(s):\n${missing.map((m) => `  - ${m}`).join("\n")}`,
+    );
+  }
+
+  return { url: supabaseUrl!, key: key! };
+}
+
+const { url: supabaseUrl, key: supabaseKey } = getEnvVars();
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const SCHEMA = "pardonned";
